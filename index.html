@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>展晟照明 新人輔導系統</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Microsoft JhengHei',sans-serif;background:#0a1628;color:#f0f4ff;min-height:100vh;overflow:hidden}
+
+/* ===== WELCOME ===== */
+#welcomeScreen{position:fixed;inset:0;background:linear-gradient(135deg,#0a1628 0%,#0f2a50 50%,#0a1628 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;transition:opacity .6s}
+#welcomeScreen.hide{opacity:0;pointer-events:none}
+.welcome-glow{position:absolute;width:520px;height:520px;background:radial-gradient(circle,rgba(249,115,22,.12) 0%,transparent 70%);border-radius:50%;animation:pulse 3s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:.6}50%{transform:scale(1.1);opacity:1}}
+@keyframes floatIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.welcome-logo{font-size:54px;margin-bottom:8px;position:relative;z-index:1;animation:floatIn .8s ease-out}
+.welcome-company{font-size:26px;font-weight:700;color:#f97316;letter-spacing:2px;position:relative;z-index:1;animation:floatIn .9s ease-out}
+.welcome-dept{font-size:14px;color:#fb923c;margin-top:4px;margin-bottom:28px;position:relative;z-index:1;animation:floatIn 1s ease-out}
+.welcome-card{background:rgba(15,32,64,.9);border:1px solid #1a3a6e;border-radius:20px;padding:32px 36px;width:390px;position:relative;z-index:1;backdrop-filter:blur(12px);animation:floatIn 1.1s ease-out;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.welcome-title{font-size:16px;font-weight:700;color:#f0f4ff;margin-bottom:5px;text-align:center}
+.welcome-sub{font-size:13px;color:#64748b;text-align:center;margin-bottom:22px;line-height:1.6}
+.w-field{margin-bottom:14px}
+.w-field label{font-size:12px;color:#fb923c;font-weight:600;display:block;margin-bottom:5px;letter-spacing:.3px}
+.w-field input{width:100%;background:#0a1628;border:1px solid #1a3a6e;color:#f0f4ff;padding:10px 14px;border-radius:10px;font-size:14px;transition:border-color .2s;font-family:inherit}
+.w-field input:focus{outline:none;border-color:#f97316}
+.day-selector{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-top:5px}
+.day-btn{background:#0a1628;border:1px solid #1a3a6e;color:#64748b;padding:7px 3px;border-radius:8px;cursor:pointer;font-size:12px;text-align:center;transition:all .2s;font-family:inherit}
+.day-btn:hover{border-color:#f97316;color:#fb923c}
+.day-btn.sel{background:rgba(249,115,22,.15);border-color:#f97316;color:#f97316;font-weight:700}
+.day-btn.done-d{border-color:#22c55e;color:#86efac;background:rgba(34,197,94,.1)}
+.w-enter-btn{width:100%;background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;border:none;padding:13px;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;margin-top:8px;letter-spacing:.5px;transition:all .2s;font-family:inherit;box-shadow:0 4px 16px rgba(249,115,22,.3)}
+.w-enter-btn:hover{background:linear-gradient(135deg,#fb923c,#f97316);box-shadow:0 6px 22px rgba(249,115,22,.45)}
+.w-enter-btn:disabled{background:#1a3a6e;color:#475569;cursor:not-allowed;box-shadow:none}
+.w-greeting{background:linear-gradient(135deg,rgba(249,115,22,.12),rgba(234,88,12,.08));border:1px solid rgba(249,115,22,.3);border-radius:12px;padding:14px;margin-bottom:18px;font-size:13px;line-height:1.7;color:#fed7aa;display:none}
+.w-greeting.show{display:block;animation:floatIn .5s ease-out}
+.w-greeting b{color:#f97316}
+
+/* ===== APP ===== */
+#appScreen{display:none;flex-direction:column;height:100vh}
+#appScreen.show{display:flex}
+header{background:linear-gradient(135deg,#0f2040,#0a1f3d);padding:11px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #f97316;flex-shrink:0}
+.logo{font-size:19px;font-weight:700;color:#f97316}
+.sub{font-size:12px;color:#fb923c}
+.header-right{display:flex;align-items:center;gap:10px}
+.user-pill{background:rgba(249,115,22,.12);border:1px solid rgba(249,115,22,.4);border-radius:99px;padding:5px 12px;font-size:12px;color:#fb923c;display:flex;align-items:center;gap:6px}
+.user-pill b{color:#f97316}
+.day-pill{background:rgba(249,115,22,.15);border:1px solid #f97316;border-radius:99px;padding:5px 12px;font-size:12px;color:#f97316;font-weight:700}
+.logout-btn{background:none;border:1px solid #1a3a6e;color:#94a3b8;padding:5px 10px;border-radius:8px;cursor:pointer;font-size:11px;transition:all .2s;font-family:inherit}
+.logout-btn:hover{border-color:#ef4444;color:#ef4444}
+
+.main{display:flex;flex:1;overflow:hidden}
+
+/* sidebar */
+.sidebar{width:250px;min-width:210px;background:#0f2040;border-right:1px solid #1a3a6e;display:flex;flex-direction:column;overflow:hidden}
+.sidebar-top{padding:12px;border-bottom:1px solid #1a3a6e}
+.day-label{font-size:10px;color:#64748b;margin-bottom:5px;font-weight:600;letter-spacing:.5px;text-transform:uppercase}
+.progress-bar-wrap{background:#0a1628;border-radius:99px;height:7px;margin-bottom:3px;overflow:hidden}
+.progress-bar{background:linear-gradient(90deg,#f97316,#fb923c);height:100%;border-radius:99px;transition:width .5s}
+.progress-text{font-size:11px;color:#fb923c;text-align:right}
+.days-scroll{flex:1;overflow-y:auto;padding:7px}
+.day-card{background:#0a1628;border:1px solid #1a3a6e;border-radius:9px;margin-bottom:5px;cursor:pointer;transition:all .2s;overflow:hidden}
+.day-card:hover{border-color:#f97316;background:rgba(249,115,22,.07)}
+.day-card.active{border-color:#f97316;background:rgba(249,115,22,.1)}
+.day-card.done{border-left:3px solid #22c55e}
+.day-card.today-card{border-color:#f97316;box-shadow:0 0 0 1px rgba(249,115,22,.25)}
+.day-header{display:flex;align-items:center;padding:8px 11px;gap:7px}
+.day-num{font-size:11px;font-weight:700;color:#f97316;min-width:36px}
+.day-title{font-size:11px;color:#cbd5e1;flex:1;line-height:1.3}
+.today-badge{font-size:9px;background:#f97316;color:#fff;border-radius:4px;padding:1px 5px;font-weight:700;flex-shrink:0}
+.day-check{width:17px;height:17px;border-radius:50%;border:2px solid #1a3a6e;display:flex;align-items:center;justify-content:center;font-size:9px;cursor:pointer;flex-shrink:0;transition:all .2s}
+.day-check.checked{background:#22c55e;border-color:#22c55e}
+/* task mini-bar in sidebar */
+.day-task-bar{height:3px;background:#0a1628;margin:0 11px 8px;border-radius:99px;overflow:hidden}
+.day-task-fill{height:100%;background:linear-gradient(90deg,#f97316,#fb923c);border-radius:99px;transition:width .4s}
+
+/* content */
+.content{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.tabs{display:flex;padding:0 14px;background:#0f2040;border-bottom:1px solid #1a3a6e;gap:3px;padding-top:7px;flex-shrink:0}
+.tab{padding:7px 16px;font-size:12px;border-radius:8px 8px 0 0;cursor:pointer;color:#94a3b8;transition:all .2s;border:1px solid transparent;border-bottom:none}
+.tab.active{background:#0a1628;color:#f97316;border-color:#1a3a6e}
+.tab:hover:not(.active){color:#fb923c}
+.daily-brief{background:linear-gradient(135deg,rgba(249,115,22,.15),rgba(15,32,64,.8));border-bottom:1px solid rgba(249,115,22,.25);padding:10px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0}
+.brief-icon{font-size:20px;flex-shrink:0}
+.brief-title{font-size:12px;font-weight:700;color:#f97316;margin-bottom:1px}
+.brief-desc{font-size:12px;color:#fed7aa;line-height:1.4}
+.panel{display:none;flex:1;overflow-y:auto;padding:14px}
+.panel.active{display:block}
+
+/* mission card */
+.mission-card{background:linear-gradient(135deg,rgba(249,115,22,.1),rgba(15,32,64,.8));border:1px solid rgba(249,115,22,.3);border-radius:12px;padding:14px;margin-bottom:12px}
+.mission-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.mission-title{font-size:13px;font-weight:700;color:#f97316;display:flex;align-items:center;gap:6px}
+.mission-prog-wrap{background:#0a1628;border-radius:99px;height:8px;width:120px;overflow:hidden}
+.mission-prog-fill{height:100%;background:linear-gradient(90deg,#f97316,#fb923c);border-radius:99px;transition:width .4s}
+.mission-prog-text{font-size:11px;color:#fb923c;margin-top:3px;text-align:right}
+
+.mission-item{display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid rgba(249,115,22,.1)}
+.mission-item:last-child{border-bottom:none}
+.mission-item.done-task .m-text{color:#64748b;text-decoration:line-through}
+.m-check-btn{width:22px;height:22px;border-radius:6px;border:2px solid #1a3a6e;background:#0a1628;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;transition:all .2s;color:transparent;font-family:inherit}
+.m-check-btn:hover{border-color:#f97316}
+.m-check-btn.done{background:#f97316;border-color:#f97316;color:#fff}
+.m-text{font-size:12px;color:#cbd5e1;flex:1;line-height:1.4}
+
+/* time blocks */
+.time-block{background:#0f2040;border:1px solid #1a3a6e;border-radius:9px;margin-bottom:9px;overflow:hidden}
+.time-block-header{background:rgba(249,115,22,.15);padding:7px 13px;font-size:11px;font-weight:600;color:#fb923c;display:flex;align-items:center;flex-wrap:wrap;gap:6px;border-bottom:1px solid rgba(249,115,22,.2)}
+.time-block-body{padding:9px 13px}
+.item-row{display:flex;gap:7px;align-items:flex-start;padding:3px 0;font-size:12px;color:#cbd5e1;border-bottom:1px solid #0f2040}
+.item-row:last-child{border-bottom:none}
+.item-dot{width:5px;height:5px;background:#f97316;border-radius:50%;margin-top:5px;flex-shrink:0}
+.test-box{background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.25);border-radius:7px;padding:7px 11px;margin-top:5px;font-size:11px;color:#86efac}
+.teacher-tag{background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.35);border-radius:99px;padding:1px 8px;font-size:10px;color:#fb923c}
+
+/* diary section */
+.diary-card{background:#0f2040;border:1px solid #1a3a6e;border-radius:12px;padding:16px;margin-top:12px}
+.diary-title{font-size:13px;font-weight:700;color:#f97316;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.diary-submitted{background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.25);border-radius:8px;padding:10px 13px;font-size:13px;color:#86efac;line-height:1.6;white-space:pre-wrap}
+.diary-submitted-label{font-size:11px;color:#22c55e;font-weight:600;margin-bottom:6px}
+textarea.diary-input{width:100%;background:#0a1628;border:1px solid #1a3a6e;color:#f0f4ff;padding:10px 13px;border-radius:9px;font-size:13px;resize:none;font-family:inherit;line-height:1.6;transition:border-color .2s}
+textarea.diary-input:focus{outline:none;border-color:#f97316}
+.diary-actions{display:flex;align-items:center;justify-content:space-between;margin-top:10px;gap:10px}
+.diary-hint{font-size:11px;color:#475569;flex:1}
+.diary-submit-btn{background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;border:none;padding:9px 22px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:700;font-family:inherit;box-shadow:0 2px 10px rgba(249,115,22,.3);transition:all .2s;white-space:nowrap}
+.diary-submit-btn:hover{background:linear-gradient(135deg,#fb923c,#f97316);box-shadow:0 4px 16px rgba(249,115,22,.45)}
+.diary-submit-btn:disabled{background:#1a3a6e;color:#475569;cursor:not-allowed;box-shadow:none}
+.next-day-toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:linear-gradient(135deg,#0f2040,#0a2d1a);border:2px solid #22c55e;border-radius:16px;padding:28px 36px;text-align:center;z-index:999;box-shadow:0 20px 60px rgba(0,0,0,.6);animation:floatIn .4s ease-out}
+.next-day-toast h3{color:#22c55e;font-size:18px;margin-bottom:8px}
+.next-day-toast p{color:#86efac;font-size:13px;margin-bottom:16px}
+.next-day-toast button{background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;border:none;padding:10px 24px;border-radius:10px;cursor:pointer;font-size:14px;font-weight:700;font-family:inherit}
+
+/* quiz */
+.quiz-area{display:flex;flex-direction:column;gap:11px}
+.quiz-q{background:#0f2040;border:1px solid #1a3a6e;border-radius:9px;padding:13px}
+.quiz-q .q-text{font-size:13px;margin-bottom:9px;color:#f0f4ff}
+.quiz-opts label{display:block;padding:7px 10px;margin:3px 0;background:#0a1628;border:1px solid #1a3a6e;border-radius:7px;cursor:pointer;font-size:12px;color:#cbd5e1;transition:all .2s}
+.quiz-opts label:hover{border-color:#f97316;color:#f0f4ff}
+.quiz-opts input[type=radio]{display:none}
+.quiz-opts input[type=radio]:checked+label{border-color:#f97316;background:rgba(249,115,22,.12);color:#f97316}
+.quiz-opts input[type=radio]:disabled+label{cursor:default;opacity:.85}
+.quiz-btn{background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;border:none;padding:8px 18px;border-radius:7px;cursor:pointer;font-size:13px;font-weight:600;transition:all .2s;margin-top:6px;font-family:inherit}
+.quiz-btn:hover{background:linear-gradient(135deg,#fb923c,#f97316)}
+.quiz-btn:disabled{background:#1a3a6e;color:#475569;cursor:not-allowed}
+.quiz-result{margin-top:7px;padding:9px;border-radius:7px;font-size:12px}
+.quiz-result.correct{background:rgba(34,197,94,.08);color:#86efac;border:1px solid rgba(34,197,94,.3)}
+.quiz-result.wrong{background:rgba(239,68,68,.08);color:#fca5a5;border:1px solid rgba(239,68,68,.3)}
+.score-bar{background:#0f2040;border:1px solid #1a3a6e;border-radius:9px;padding:12px;margin-bottom:11px;display:flex;align-items:center;gap:12px}
+.score-circle{width:50px;height:50px;border-radius:50%;border:3px solid #f97316;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#f97316;flex-shrink:0}
+
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:#0a1628}
+::-webkit-scrollbar-thumb{background:#1a3a6e;border-radius:99px}
+::-webkit-scrollbar-thumb:hover{background:#f97316}
+</style>
+</head>
+<body>
+
+<!-- WELCOME -->
+<div id="welcomeScreen">
+  <div class="welcome-glow"></div>
+  <div class="welcome-logo">💡</div>
+  <div class="welcome-company">展晟照明集團</div>
+  <div class="welcome-dept">專案業務 MA 班 ─ 新進人員輔導系統</div>
+  <div class="welcome-card">
+    <div id="wGreeting" class="w-greeting"></div>
+    <div class="welcome-title">歡迎登入</div>
+    <div class="welcome-sub">請輸入您的資訊以開始今日訓練</div>
+    <div class="w-field">
+      <label>帳號（員工編號或英文名）</label>
+      <input id="wAccount" type="text" placeholder="例：A001 或 john" autocomplete="off">
+    </div>
+    <div class="w-field">
+      <label>姓名</label>
+      <input id="wName" type="text" placeholder="請輸入中文姓名">
+    </div>
+    <div class="w-field">
+      <label>今天是第幾天訓練？</label>
+      <div class="day-selector" id="daySel"></div>
+    </div>
+    <button class="w-enter-btn" id="enterBtn" onclick="enterApp()" disabled>進入訓練系統 →</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="appScreen">
+  <header>
+    <div>
+      <div class="logo">💡 展晟照明集團</div>
+      <div class="sub">專案業務 MA 班 ─ 新進人員輔導系統</div>
+    </div>
+    <div class="header-right">
+      <div class="user-pill">👤 <b id="hName"></b><span style="color:#1a3a6e;margin:0 4px">|</span><span id="hAccount" style="color:#64748b"></span></div>
+      <div class="day-pill" id="hDay">Day 1</div>
+      <button class="logout-btn" onclick="logout()">登出</button>
+    </div>
+  </header>
+  <div class="main">
+    <div class="sidebar">
+      <div class="sidebar-top">
+        <div class="day-label">整體訓練進度</div>
+        <div class="progress-bar-wrap"><div class="progress-bar" id="progBar" style="width:0%"></div></div>
+        <div class="progress-text" id="progText">0 / 14 天完成</div>
+      </div>
+      <div class="days-scroll" id="dayList"></div>
+    </div>
+    <div class="content">
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab('schedule')">📋 課程內容</div>
+        <div class="tab" onclick="switchTab('quiz')">✏️ 測驗練習</div>
+      </div>
+      <div class="daily-brief">
+        <div class="brief-icon">🌅</div>
+        <div class="brief-text">
+          <div class="brief-title" id="briefTitle"></div>
+          <div class="brief-desc" id="briefDesc"></div>
+        </div>
+      </div>
+      <div class="panel active" id="schedulePanel"></div>
+      <div class="panel" id="quizPanel"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SHEET_URL='https://script.google.com/macros/s/AKfycby5nzoik1A0IknonYG2Gfq6YbQzh2iqFe4l_mf0CNYq5knEctb600FD8RRyxIWGGuhIlQ/exec';
+
+const TRAINING_DATA=[
+  {day:1,title:"入職報到・環境認識",brief:"今天是你在展晟的第一天！完成入職手續、認識環境、了解公司架構，下午前往倉庫實作認識產品。",missions:["完成新進人員基本資料填寫","認識辦公環境並記住各部門位置","專心聆聽人事規章與組織架構說明","觀看公司沿革影片並做筆記","下午倉庫撿貨，認識產品種類與名稱","晚上19:30前寄出學習日報"],am:[{time:"08:00-10:00",items:["新進人員基本資料填寫","認識環境（帶至部門入職）","人事規章、流程、組織架構介紹","公司沿革介紹（影片播放）"],teacher:"人資總務",test:"學習日報：每日下班後19:30前寄出，撰寫當日觀察與分析心得"},{time:"10:10-11:00",items:["發放公司目錄（上課用）","跨部門職能說明及自我介紹"],teacher:"林錩毅",test:"觀察目錄類別：LED、OD、專案工程、GA、WF"},{time:"11:10-11:50",items:["部門職務說明（概況PPT）"],teacher:"林錩毅",test:"主旨：對產業及職務的基本認知（學習力）"}],pm:[{time:"13:10-17:00",items:["倉庫撿貨實作─認識產品"],teacher:"物流主管",test:"方式：倉庫撿貨實作；主旨：對產業物流作業及商品熟悉（投入力）"}]},
+  {day:2,title:"業務基礎・照明概念",brief:"第二天進入業務核心學習！參加朝會、學習客戶屬性分類、拜訪SOP、照明基本定義。",missions:["參加業務部朝會並認真傾聽","學習並理解客戶屬性定義（LED/OD/專案/GA/WF）","熟記基本拜訪SOP流程（隔日默寫）","完成照明燈具觀察測驗卷","完成照明基本定義測驗卷","開始製作「如何開發專案新客戶」PPT（至少5頁）","19:30前寄出學習日報"],am:[{time:"08:30-09:30",items:["參加業務部朝會"],teacher:"",test:"方式：會後隨機口試"},{time:"09:40-10:30",items:["職務工作說明書","照明產業─客戶屬性介紹"],teacher:"范貴勇",test:"測驗：填寫「客戶屬性定義」（10分鐘）"},{time:"10:40-11:50",items:["市場定義─公共工程（共契）、專案","專案客戶基本拜訪SOP"],teacher:"范貴勇",test:"隔日默寫：基本拜訪流程+作業說明（10+10分鐘）"}],pm:[{time:"13:10-15:00",items:["案場場勘照明規劃模擬教學"],teacher:"范貴勇",test:"測驗：填寫「觀察到的照明燈具」（10分鐘）"},{time:"15:10-15:50",items:["照明基本定義講解（A_照明概念）"],teacher:"范貴勇",test:"測驗：填寫「照明基本定義」（10分鐘）"},{time:"16:00-17:00",items:["新客戶開發路徑教學","客戶拜訪月計劃、周檢討表教學","店（電）訪自我介紹應對話術"],teacher:"范貴勇",test:"交辦：①開發新客戶PPT（至少5頁）②公司簡介（簡易版）"}]},
+  {day:3,title:"測驗發表・跟車外訓",brief:"今天是第一個重要考核日！默寫拜訪流程、發表公司簡介PPT、完成收繳款試卷。",missions:["朝會自我介紹，展現表達力","完成基本拜訪流程默寫（10分鐘）","上台發表公司簡介PPT（15分鐘）","完成業務收繳款模擬試卷（30分鐘）","下午全程專注跟車外訓，觀察市場生態","19:30前寄出學習日報"],am:[{time:"08:30-09:30",items:["參加業務部朝會/自我介紹"],teacher:"",test:"方式：隨機口試"},{time:"09:30-09:50",items:["測驗：默寫基本拜訪流程+作業說明"],teacher:"范貴勇",test:"時間：10+10分鐘"},{time:"10:00-10:30",items:["測驗：公司簡介PPT簡報發表"],teacher:"范貴勇",test:"發表15分鐘＋Q&A 5分鐘＋評論10分鐘"},{time:"10:40-11:30",items:["業務收繳款模擬試卷教學"],teacher:"范貴勇",test:"業務收繳款模擬試卷（30分鐘）"}],pm:[{time:"13:00-17:30",items:["跟車外訓：熟識市場及店頭"],teacher:"林錩毅",test:"市場分類教學及各屬性客戶實務接觸"}]},
+  {day:4,title:"產品專業導讀・跟車",brief:"開始深入學習產品專業知識！上午產品基礎導讀，下午跟車認識市場客戶類型。",missions:["參加業務部朝會","完成產品專業基礎導讀（50分鐘）","做好產品學習筆記","下午跟車觀察各類型客戶互動","記錄今日接觸到的客戶類型","19:30前寄出學習日報"],am:[{time:"08:30-09:30",items:["參加業務部朝會"],teacher:"",test:"方式：隨機口試"},{time:"10:30",items:["產品專業─基礎「導讀」學習"],teacher:"范貴勇",test:"上課50分鐘"}],pm:[{time:"13:00-17:30",items:["跟車外訓：熟識市場及店頭"],teacher:"陳雅芬",test:"市場分類教學及各屬性客戶實務接觸"}]},
+  {day:5,title:"店訪SOP・跟車外訓",brief:"今天學習店訪與電訪的自我介紹SOP，讓客戶記住你的關鍵！",missions:["參加業務部朝會","學習店/電訪自我介紹SOP","思考如何令人印象深刻","下午跟車觀察業務員自我介紹方式","記錄今日話術","19:30前寄出學習日報"],am:[{time:"08:30-09:30",items:["參加業務部朝會"],teacher:"",test:"方式：隨機口試"},{time:"10:30",items:["店（電）訪自我介紹SOP教學"],teacher:"范貴勇",test:"上課50分鐘"}],pm:[{time:"13:00-17:30",items:["跟車外訓：熟識市場及店頭"],teacher:"顏羽宏",test:"市場分類教學及各屬性客戶實務接觸"}]},
+  {day:6,title:"公司簡介教學・跟車",brief:"學習公司簡介簡易版，拜訪客戶時能流暢介紹展晟！",missions:["參加業務部朝會","學習公司簡介（簡易版）重點","練習用自己的話介紹公司","下午跟車觀察公司介紹方式","整理公司核心競爭優勢筆記","19:30前寄出學習日報"],am:[{time:"08:30-09:30",items:["參加業務部朝會"],teacher:"",test:"方式：隨機口試"},{time:"10:30",items:["公司簡介教學（簡易版）"],teacher:"范貴勇",test:"上課50分鐘"}],pm:[{time:"13:00-17:30",items:["跟車外訓：熟識市場及店頭"],teacher:"張書懷",test:"市場分類教學及各屬性客戶實務接觸"}]},
+  {day:7,title:"專案工程目錄・跟車",brief:"進入專案工程目錄學習！了解工程類產品規格與應用。",missions:["參加業務部朝會","學習專案工程目錄基礎導讀（50分鐘）","整理專案工程常用產品清單","下午跟車重點觀察工程類客戶","記錄專案客戶拜訪眉角","19:30前寄出學習日報"],am:[{time:"08:30-09:30",items:["參加業務部朝會"],teacher:"",test:"方式：隨機口試"},{time:"10:30",items:["專案工程目錄─基礎「導讀」學習"],teacher:"范貴勇",test:"上課50分鐘"}],pm:[{time:"13:00-17:30",items:["跟車外訓：熟識市場及店頭"],teacher:"謝柏偉",test:"市場分類教學及各屬性客戶實務接觸"}]},
+  {day:8,title:"LED目錄・協銷實作",brief:"LED目錄導讀後，下午直接協銷實戰！保持積極態度。",missions:["參加業務部朝會","學習LED目錄基礎導讀（50分鐘）","下午協銷：跟緊學長姐多看多學","觀察客戶反應與業務應對","記錄協銷印象深刻的情境","19:30前寄出學習日報"],am:[{time:"08:30-09:30",items:["參加業務部朝會"],teacher:"",test:"方式：隨機口試"},{time:"10:30",items:["LED目錄─基礎「導讀」學習"],teacher:"范貴勇",test:"上課50分鐘"}],pm:[{time:"11:00-17:30",items:["外訓：實作演練測試（協銷）"],teacher:"吳誌文",test:"協銷實作教學"}]},
+  {day:9,title:"LED目錄深化・跟車",brief:"繼續深化LED產品知識，搭配跟車外訓整合理論與實務。",missions:["參加業務部朝會","LED目錄複習補強","下午跟車主動辨識客戶需求","整合產品知識與市場應用","準備Day10 PPT發表","19:30前寄出學習日報"],am:[{time:"08:30-09:30",items:["參加業務部朝會"],teacher:"",test:"方式：隨機口試"},{time:"10:30",items:["LED目錄─基礎「導讀」學習"],teacher:"范貴勇",test:"上課50分鐘"}],pm:[{time:"13:00-17:30",items:["跟車外訓：熟識市場及店頭"],teacher:"張瀧澄",test:"市場分類教學及各屬性客戶實務接觸"}]},
+  {day:10,title:"PPT再發表・CNS規範",brief:"今天是第二次PPT發表考核！展現進步，下午學習CNS規範。",missions:["朝會展現更自信的表達力","PPT發表展現進步成果（15分鐘）","認真聽取評論反饋","學習CNS規範","完成產品&銷售綜合練習","19:30前寄出學習日報"],am:[{time:"08:30-09:30",items:["參加業務部朝會"],teacher:"",test:"方式：隨機口試"},{time:"10:00",items:["測驗：公司簡介PPT簡報再發表"],teacher:"范貴勇",test:"發表15分鐘＋Q&A 5分鐘＋評論10分鐘"}],pm:[{time:"13:00-17:30",items:["CNS相關規範教學","產品&銷售綜合練習"],teacher:"范貴勇",test:"目錄簡介+銷售報價"}]},
+  {day:11,title:"政府採購網・跟車",brief:"學習政府電子採購網操作，公共工程業務必備技能！",missions:["參加業務部朝會","學習政府電子採購網SOP","完成上機實測（20分鐘）","學習專案工程目錄","下午跟車關注政府機關案場","19:30前寄出學習日報"],am:[{time:"08:30-09:30",items:["參加業務部朝會"],teacher:"",test:"方式：隨機口試"},{time:"10:30",items:["政府電子採購網上機SOP教學","專案工程目錄─基礎「導讀」學習"],teacher:"林錩毅",test:"上機實測20分鐘"}],pm:[{time:"13:00-17:30",items:["跟車外訓：熟識市場及店頭"],teacher:"林錩毅",test:"市場分類教學及各屬性客戶實務接觸"}]},
+  {day:12,title:"專案目錄深化・協銷",brief:"繼續專案工程目錄學習，下午協銷實作更主動參與！",missions:["參加業務部朝會","專案工程目錄深化學習（50分鐘）","整理工程類產品規格重點","下午協銷協助業務說明","記錄客戶常見問題","19:30前寄出學習日報"],am:[{time:"08:30-09:30",items:["參加業務部朝會"],teacher:"",test:"方式：隨機口試"},{time:"10:30",items:["專案工程目錄─基礎「導讀」學習"],teacher:"林錩毅",test:"上課50分鐘"}],pm:[{time:"13:00-17:30",items:["外訓：實作演練測試"],teacher:"黃志為",test:"協銷實作教學"}]},
+  {day:13,title:"客戶開發計劃・外訓",brief:"開始自主開發新客戶！製作名單、電話約訪，成果化為行動。",missions:["參加業務部朝會","網路蒐集新客戶名單（至少10筆）","撰寫客戶約訪計劃書","進行電話約訪練習（50分鐘）","下午外訓實際執行","19:30前寄出學習日報"],am:[{time:"08:30-09:30",items:["參加業務部朝會"],teacher:"",test:"方式：隨機口試"},{time:"10:30",items:["計劃排程：新客戶名單+約訪","專案工程目錄─基礎「導讀」學習"],teacher:"林錩毅",test:"網路蒐尋+電話約訪（50分鐘）"}],pm:[{time:"11:00-17:30",items:["外訓：實作演練測試"],teacher:"林錩毅",test:"市場分類教學及各屬性客戶實務接觸"}]},
+  {day:14,title:"綜合外訓・結訓驗收",brief:"訓練最後一天！綜合外訓實戰驗收，展現14天所有學習成果！",missions:["朝會以最佳狀態展現成長","完善客戶開發名單","繼續電話約訪累積成果","全天外訓完整展現業務能力","準備結訓報告與心得","完成最後一份學習日報"],am:[{time:"08:30-09:30",items:["參加業務部朝會"],teacher:"",test:"方式：隨機口試"},{time:"10:30",items:["計劃排程：新客戶名單+約訪"],teacher:"林錩毅",test:"最終實作"}],pm:[{time:"11:00-17:30",items:["外訓：實作演練測試（結訓驗收）"],teacher:"林錩毅",test:"市場分類教學及各屬性客戶實務接觸"}]}
+];
+
+const QUIZZES=[
+  {day:1,q:"展晟照明集團成立於哪一年？",opts:["1975年","1987年","1995年","2000年"],ans:1,exp:"展晟照明集團於1987年在台南創立，從一間小燈飾店起家，至今超過35年歷史。"},
+  {day:1,q:"展晟照明旗下的主要自有品牌是？",opts:["LED之星","舞光（DanceLight）","晟光","台照"],ans:1,exp:"展晟主要自有品牌為「舞光（DanceLight）」，2008年創立，另有金色年代美術燈、楓光吊扇。"},
+  {day:1,q:"展晟照明目前在台灣擁有約多少個零售據點？",opts:["約500個","約1000個","約2500個","約5000個"],ans:2,exp:"展晟照明在台灣已銷售到超過2500個零售點，產品也外銷至10個國家。"},
+  {day:1,q:"展晟的物流配送車隊約有幾輛？",opts:["約20輛","約50輛","約100輛","約200輛"],ans:2,exp:"展晟約有100輛配送車隊，可做到「今日訂今日到」的快速配送。"},
+  {day:1,q:"第一天倉庫撿貨主要訓練的能力是？",opts:["銷售話術","對產業物流及商品的熟悉（投入力）","客戶關係管理","財務報表分析"],ans:1,exp:"倉庫撿貨實作主旨是「輔助訓練對產業物流作業及商品的熟悉」，評估「投入力」。"},
+  {day:1,q:"學習日報最晚應在幾點前寄出？",opts:["17:00","18:00","19:30","21:00"],ans:2,exp:"每日下班後學習日報須在19:30前寄出，內容為當日實務接觸的觀察及分析心得。"},
+  {day:2,q:"「公共工程（共契）」客戶的主要特性？",opts:["走量銷售、議價大","以政府標案為主、需公開招標","強調個人關係、不需報價","主要電話行銷"],ans:1,exp:"公共工程（共契）是政府機關聯合採購契約，需透過公開招標流程，業務需熟悉電子採購網。"},
+  {day:2,q:"基本拜訪SOP的第一步是什麼？",opts:["直接說明產品規格","進行自我介紹並說明來意","詢問目前預算","留名片後離開"],ans:1,exp:"拜訪SOP第一步是「自我介紹並說明來意」，讓客戶建立初步印象，強調令人記憶深刻的自我行銷。"},
+  {day:2,q:"展晟企業文化，下列何者不包含？",opts:["正面積極、學習創新","當責誠信、熱忱服務","個人英雄主義","團隊合作"],ans:2,exp:"展晟企業文化為「正面積極、學習創新、當責誠信、熱忱服務、團隊合作」，強調團隊共好。"},
+  {day:2,q:"LED燈具的色溫單位是？",opts:["流明(lm)","克耳文(K)","勒克斯(lux)","瓦特(W)"],ans:1,exp:"色溫單位是「克耳文（K）」。低色溫（2700-3000K）偏暖黃，高色溫（5000-6500K）偏冷白。"},
+  {day:2,q:"演色性（CRI/Ra）數值越高代表？",opts:["燈具越省電","顏色還原越真實","光照範圍越廣","燈具壽命越長"],ans:1,exp:"演色性（CRI/Ra）越高顏色還原越真實（最高100）。商業空間建議Ra≥80，精品店建議Ra≥90。"},
+  {day:3,q:"公司簡介PPT發表時間分配？",opts:["發表20分鐘","發表15分鐘、Q&A 5分鐘、評論10分鐘","發表10分鐘、Q&A 10分鐘","自由發表"],ans:1,exp:"標準流程：發表15分鐘＋Q&A 5分鐘＋評論10分鐘，評分：PPT製作、口條流暢度、台風穩定度。"},
+  {day:3,q:"業務收繳款測驗主要考核？",opts:["記憶力","邏輯思考及數據敏銳度","簡報製作","人際溝通"],ans:1,exp:"業務收繳款模擬試卷主要測試「邏輯思考及數據（字）敏銳度」，是業務職能的重要基礎。"},
+  {day:10,q:"CNS規範在照明業務中的用途？",opts:["規範業務員行為","作為產品報價與銷售規範依據","決定客戶信用","管理倉庫存貨"],ans:1,exp:"CNS（中華民國國家標準）是產品報價職能的基礎，搭配目錄進行銷售報價，確保符合規格。"},
+  {day:11,q:"政府電子採購網上機實測時間？",opts:["10分鐘","20分鐘","30分鐘","50分鐘"],ans:1,exp:"政府電子採購網上機實測為20分鐘，認識政府機構工程電子採購網操作，是專案業務必備技能。"},
+  {day:2,q:"「照度」的單位是？",opts:["流明(lm)","克耳文(K)","勒克斯(lux/lx)","瓦特(W)"],ans:2,exp:"照度單位是「勒克斯（lux/lx）」，代表單位面積接收到的光通量，各空間有CNS最低照度規範。"}
+];
+
+// ==================== localStorage ====================
+const LS_SESSION='dl_session';
+const lsKey=acc=>`dl_user_${acc}`;
+const lsSave=(acc,d)=>{try{localStorage.setItem(lsKey(acc),JSON.stringify(d))}catch(e){}};
+const lsLoad=acc=>{try{const v=localStorage.getItem(lsKey(acc));return v?JSON.parse(v):null}catch(e){return null}};
+const lsSaveSession=acc=>{try{localStorage.setItem(LS_SESSION,acc)}catch(e){}};
+const lsLoadSession=()=>{try{return localStorage.getItem(LS_SESSION)||''}catch(e){return ''}};
+const lsClearSession=()=>{try{localStorage.removeItem(LS_SESSION)}catch(e){}};
+
+// ==================== STATE ====================
+let userData={account:'',name:'',currentDay:1,completed:new Set()};
+let quizScores={};
+let taskProgress={};   // key: "day_idx" → true/false
+let diaryEntries={};   // key: day(number) → string
+let selectedDay=null;
+
+function persistUser(){
+  lsSave(userData.account,{
+    account:userData.account, name:userData.name,
+    currentDay:userData.currentDay,
+    completed:[...userData.completed],
+    quizScores, taskProgress, diaryEntries
+  });
+  syncToSheets();
+}
+
+// ==================== GOOGLE SHEETS 同步 ====================
+let syncTimer=null;
+function syncToSheets(){
+  clearTimeout(syncTimer);
+  syncTimer=setTimeout(doSync, 1000);
+}
+
+function doSync(){
+  const payload={
+    account:userData.account,
+    name:userData.name,
+    currentDay:userData.currentDay,
+    completed:[...userData.completed],
+    quizScores:quizScores,
+    taskProgress:taskProgress,
+    diaryEntries:diaryEntries
+  };
+  const encoded=encodeURIComponent(JSON.stringify(payload));
+  const url=`${SHEET_URL}?payload=${encoded}`;
+
+  // 方法一：iframe 靜默送出（最可靠，完全無 CORS 問題）
+  let iframe=document.getElementById('syncFrame');
+  if(!iframe){
+    iframe=document.createElement('iframe');
+    iframe.id='syncFrame';
+    iframe.style.display='none';
+    document.body.appendChild(iframe);
+  }
+  iframe.src=url;
+  showSyncBadge('🔄 同步中…');
+
+  // 方法二：同時用 Image beacon 雙保險
+  const img=new Image();
+  img.onload=img.onerror=()=>showSyncBadge('✅ 已同步至雲端');
+  img.src=url+'&t='+Date.now();
+}
+
+function showSyncBadge(msg){
+  let b=document.getElementById('syncBadge');
+  if(!b){
+    b=document.createElement('div');
+    b.id='syncBadge';
+    b.style.cssText='position:fixed;bottom:18px;right:18px;background:#0f2040;border:1px solid #f97316;color:#fb923c;padding:9px 16px;border-radius:10px;font-size:12px;font-weight:600;z-index:999;transition:opacity .5s;box-shadow:0 4px 16px rgba(249,115,22,.25)';
+    document.body.appendChild(b);
+  }
+  b.textContent=msg; b.style.opacity='1';
+  clearTimeout(b._t);
+  b._t=setTimeout(()=>b.style.opacity='0',3000);
+}
+
+// ==================== WELCOME ====================
+(function initWelcome(){
+  const sel=document.getElementById('daySel');
+  for(let i=1;i<=14;i++){
+    const b=document.createElement('button');
+    b.className='day-btn';b.textContent=i;b.dataset.day=i;
+    b.onclick=()=>{document.querySelectorAll('.day-btn').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');onWFieldChange();};
+    sel.appendChild(b);
+  }
+  document.getElementById('wAccount').addEventListener('input',onWFieldChange);
+  document.getElementById('wName').addEventListener('input',onWFieldChange);
+  const last=lsLoadSession();
+  if(last){const s=lsLoad(last);if(s)autoFill(s);}
+  document.getElementById('wAccount').addEventListener('blur',function(){
+    const s=lsLoad(this.value.trim());if(s)autoFill(s);
+  });
+})();
+
+function autoFill(saved){
+  document.getElementById('wAccount').value=saved.account||'';
+  document.getElementById('wName').value=saved.name||'';
+  document.querySelectorAll('.day-btn').forEach(b=>{
+    if((saved.completed||[]).includes(parseInt(b.dataset.day)))b.classList.add('done-d');
+  });
+  const day=Math.min(saved.currentDay||1,14);
+  const btn=document.querySelector(`.day-btn[data-day="${day}"]`);
+  if(btn){document.querySelectorAll('.day-btn').forEach(x=>x.classList.remove('sel'));btn.classList.add('sel');}
+  showGreeting(saved.name,day,true);
+  onWFieldChange();
+}
+
+function onWFieldChange(){
+  const acc=document.getElementById('wAccount').value.trim();
+  const nm=document.getElementById('wName').value.trim();
+  document.getElementById('enterBtn').disabled=!(acc&&nm);
+}
+
+function showGreeting(name,day,isReturn){
+  const g=document.getElementById('wGreeting');
+  g.innerHTML=isReturn
+    ?`👋 歡迎回來，<b>${name}</b>！偵測到您上次進行到 <b>第 ${day} 天</b>，已為您自動帶入。`
+    :`🎉 歡迎加入展晟照明，<b>${name}</b>！<br>很高興有你加入專案業務部這個大家庭，未來有任何問題都歡迎提出，一起討論成長！`;
+  g.classList.add('show');
+}
+
+function enterApp(){
+  const acc=document.getElementById('wAccount').value.trim();
+  const nm=document.getElementById('wName').value.trim();
+  const selBtn=document.querySelector('.day-btn.sel');
+  const selDay=selBtn?parseInt(selBtn.dataset.day):1;
+  if(!acc||!nm)return;
+  const saved=lsLoad(acc);
+  userData.account=acc;userData.name=nm;userData.currentDay=selDay;
+  userData.completed=new Set(saved?.completed||[]);
+  quizScores=saved?.quizScores||{};
+  taskProgress=saved?.taskProgress||{};
+  diaryEntries=saved?.diaryEntries||{};
+  if(!saved)showGreeting(nm,selDay,false);
+  lsSaveSession(acc);
+  persistUser();
+  startApp();
+}
+
+// ==================== APP ====================
+function startApp(){
+  document.getElementById('welcomeScreen').classList.add('hide');
+  setTimeout(()=>document.getElementById('welcomeScreen').style.display='none',600);
+  const app=document.getElementById('appScreen');
+  app.style.display='flex';app.classList.add('show');
+  document.getElementById('hName').textContent=userData.name;
+  document.getElementById('hAccount').textContent=userData.account;
+  document.getElementById('hDay').textContent=`Day ${userData.currentDay}`;
+  buildDayList();
+  selectDayPanel(userData.currentDay);
+  renderQuiz();
+}
+
+function buildDayList(){
+  const list=document.getElementById('dayList');list.innerHTML='';
+  TRAINING_DATA.forEach(d=>{
+    const isToday=d.day===userData.currentDay;
+    const isDone=userData.completed.has(d.day);
+    const {done,total}=getTaskStats(d.day);
+    const pct=total>0?Math.round(done/total*100):0;
+    const el=document.createElement('div');
+    el.className=`day-card${isToday?' today-card':''}${isDone?' done':''}`;
+    el.id=`dc-${d.day}`;
+    el.innerHTML=`<div class="day-header">
+      <span class="day-num">Day ${d.day}</span>
+      <span class="day-title">${d.title}</span>
+      ${isToday?'<span class="today-badge">TODAY</span>':''}
+      <div class="day-check${isDone?' checked':''}" onclick="toggleDone(event,${d.day})">${isDone?'✓':''}</div>
+    </div>
+    <div class="day-task-bar"><div class="day-task-fill" style="width:${pct}%"></div></div>`;
+    el.addEventListener('click',()=>selectDayPanel(d.day));
+    list.appendChild(el);
+  });
+  updateProgress();
+}
+
+function getTaskStats(day){
+  const d=TRAINING_DATA.find(x=>x.day===day);
+  if(!d)return{done:0,total:0};
+  const total=d.missions.length;
+  let done=0;
+  for(let i=0;i<total;i++){if(taskProgress[`${day}_${i}`])done++;}
+  return{done,total};
+}
+
+function toggleDone(e,day){
+  e.stopPropagation();
+  if(userData.completed.has(day))userData.completed.delete(day);
+  else userData.completed.add(day);
+  const card=document.getElementById(`dc-${day}`);
+  card.classList.toggle('done',userData.completed.has(day));
+  const chk=card.querySelector('.day-check');
+  chk.classList.toggle('checked',userData.completed.has(day));
+  chk.textContent=userData.completed.has(day)?'✓':'';
+  updateProgress();
+  persistUser();
+}
+
+function updateProgress(){
+  const pct=Math.round(userData.completed.size/14*100);
+  document.getElementById('progBar').style.width=pct+'%';
+  document.getElementById('progText').textContent=`${userData.completed.size} / 14 天完成`;
+}
+
+function selectDayPanel(day){
+  selectedDay=day;
+  document.querySelectorAll('.day-card').forEach(c=>c.classList.remove('active'));
+  document.getElementById(`dc-${day}`)?.classList.add('active');
+  renderSchedule(day);renderBrief(day);
+}
+
+function renderBrief(day){
+  const d=TRAINING_DATA.find(x=>x.day===day);if(!d)return;
+  document.getElementById('briefTitle').textContent=day===userData.currentDay?`📅 今日訓練 ─ 第${day}天：${d.title}`:`📅 第${day}天：${d.title}`;
+  document.getElementById('briefDesc').textContent=d.brief;
+}
+
+function renderSchedule(day){
+  const d=TRAINING_DATA.find(x=>x.day===day);if(!d)return;
+  const {done,total}=getTaskStats(day);
+  const pct=total>0?Math.round(done/total*100):0;
+
+  // Mission card with task checkboxes
+  let mHtml=`<div class="mission-card">
+    <div class="mission-header">
+      <div class="mission-title">✅ 今日任務清單</div>
+      <div>
+        <div class="mission-prog-wrap"><div class="mission-prog-fill" id="mpf-${day}" style="width:${pct}%"></div></div>
+        <div class="mission-prog-text" id="mpt-${day}">${done}/${total} 完成</div>
+      </div>
+    </div>
+    ${d.missions.map((m,i)=>{
+      const key=`${day}_${i}`;
+      const isDone=!!taskProgress[key];
+      return `<div class="mission-item${isDone?' done-task':''}" id="mi-${day}-${i}">
+        <button class="m-check-btn${isDone?' done':''}" onclick="toggleTask(${day},${i})" title="標記完成">${isDone?'✓':''}</button>
+        <span class="m-text">${m}</span>
+      </div>`;
+    }).join('')}
+  </div>`;
+
+  // Schedule blocks
+  let sHtml='';
+  [{label:'🌅 上午',items:d.am},{label:'🌇 下午',items:d.pm}].forEach(s=>{
+    (s.items||[]).forEach(blk=>{
+      sHtml+=`<div class="time-block">
+        <div class="time-block-header">${s.label} ${blk.time||''}${blk.teacher?` <span class="teacher-tag">👨‍🏫 ${blk.teacher}</span>`:''}
+        </div>
+        <div class="time-block-body">
+          ${blk.items.map(i=>`<div class="item-row"><div class="item-dot"></div><span>${i}</span></div>`).join('')}
+          ${blk.test?`<div class="test-box">📝 ${blk.test}</div>`:''}
+        </div>
+      </div>`;
+    });
+  });
+
+  // Diary section
+  const existing=diaryEntries[day]||'';
+  const diaryHtml=`<div class="diary-card">
+    <div class="diary-title">📝 今日學習日報心得</div>
+    ${existing
+      ?`<div class="diary-submitted-label">✅ 已提交</div>
+        <div class="diary-submitted">${existing}</div>
+        <div style="margin-top:10px">
+          <button onclick="editDiary(${day})" style="background:none;border:1px solid #1a3a6e;color:#94a3b8;padding:5px 12px;border-radius:7px;cursor:pointer;font-size:11px;font-family:inherit">✏️ 重新編輯</button>
+        </div>`
+      :`<textarea class="diary-input" id="diary-${day}" rows="5" placeholder="請寫下今天的學習心得、觀察與感想…"></textarea>
+        <div class="diary-actions">
+          <span class="diary-hint">💡 填寫完畢後點送出，系統將自動同步至雲端並跳至下一天</span>
+          <button class="diary-submit-btn" onclick="submitDiary(${day})">送出 →</button>
+        </div>`
+    }
+  </div>`;
+
+  document.getElementById('schedulePanel').innerHTML=mHtml+sHtml+diaryHtml;
+}
+
+function toggleTask(day,idx){
+  const key=`${day}_${idx}`;
+  taskProgress[key]=!taskProgress[key];
+  // update UI
+  const mi=document.getElementById(`mi-${day}-${idx}`);
+  const btn=mi.querySelector('.m-check-btn');
+  const isDone=taskProgress[key];
+  mi.classList.toggle('done-task',isDone);
+  btn.classList.toggle('done',isDone);
+  btn.textContent=isDone?'✓':'';
+  // update progress bar
+  const {done,total}=getTaskStats(day);
+  const pct=total>0?Math.round(done/total*100):0;
+  const mpf=document.getElementById(`mpf-${day}`);
+  const mpt=document.getElementById(`mpt-${day}`);
+  if(mpf)mpf.style.width=pct+'%';
+  if(mpt)mpt.textContent=`${done}/${total} 完成`;
+  // update sidebar mini bar
+  const fill=document.querySelector(`#dc-${day} .day-task-fill`);
+  if(fill)fill.style.width=pct+'%';
+  persistUser();
+}
+
+function submitDiary(day){
+  const ta=document.getElementById(`diary-${day}`);
+  const text=ta?ta.value.trim():'';
+  if(!text){alert('請填寫今日心得後再送出！');return;}
+  diaryEntries[day]=text;
+  persistUser();
+  // re-render diary section as submitted
+  renderSchedule(day);
+  // show toast and jump to next day
+  showNextDayToast(day);
+}
+
+function editDiary(day){
+  const old=diaryEntries[day]||'';
+  delete diaryEntries[day];
+  renderSchedule(day);
+  const ta=document.getElementById(`diary-${day}`);
+  if(ta)ta.value=old;
+}
+
+function showNextDayToast(day){
+  const next=day+1;
+  const toast=document.createElement('div');
+  toast.className='next-day-toast';
+  toast.innerHTML=`<h3>🎉 Day ${day} 完成！</h3>
+    <p>日報心得已上傳至雲端<br>${next<=14?`即將跳至第 ${next} 天訓練`:'恭喜完成全部14天訓練！'}</p>
+    <button onclick="this.parentElement.remove();${next<=14?`goNextDay(${next})`:''}">${next<=14?`前往 Day ${next} →`:'完成 🎊'}</button>`;
+  document.body.appendChild(toast);
+  if(next<=14)setTimeout(()=>{toast.remove();goNextDay(next);},3000);
+}
+
+function goNextDay(day){
+  if(day>14)return;
+  userData.currentDay=day;
+  document.getElementById('hDay').textContent=`Day ${day}`;
+  // mark previous day done
+  userData.completed.add(day-1);
+  persistUser();
+  buildDayList();
+  selectDayPanel(day);
+}
+
+function switchTab(tab){
+  ['schedule','quiz'].forEach((t,i)=>{document.querySelectorAll('.tab')[i].classList.toggle('active',t===tab);});
+  document.getElementById('schedulePanel').classList.toggle('active',tab==='schedule');
+  document.getElementById('quizPanel').classList.toggle('active',tab==='quiz');
+}
+
+// ==================== QUIZ ====================
+function renderQuiz(){
+  const correct=Object.values(quizScores).filter(Boolean).length;
+  const total=Object.keys(quizScores).length;
+  let html='';
+  if(total>0){
+    const pct=Math.round(correct/total*100);
+    html+=`<div class="score-bar"><div class="score-circle">${pct}%</div><div style="font-size:13px;color:#94a3b8"><b style="color:#f0f4ff">目前答題成績</b><br>共答 ${total} 題，答對 ${correct} 題</div></div>`;
+  }
+  html+=`<div class="quiz-area">`;
+  QUIZZES.forEach((q,i)=>{
+    const answered=quizScores.hasOwnProperty(String(i))||quizScores.hasOwnProperty(i);
+    const isCorrect=quizScores[String(i)]||quizScores[i];
+    html+=`<div class="quiz-q">
+      <div class="q-text"><b style="color:#f97316">[Day ${q.day}]</b> ${q.q}</div>
+      <div class="quiz-opts">${q.opts.map((o,j)=>`<div><input type="radio" name="q${i}" id="q${i}o${j}" value="${j}"${answered?` disabled${j===q.ans?' checked':''}` : ''}><label for="q${i}o${j}">${o}</label></div>`).join('')}</div>
+      <div><button class="quiz-btn" onclick="checkQuiz(${i})"${answered?' disabled':''}>確認答案</button></div>
+      ${answered?`<div class="quiz-result ${isCorrect?'correct':'wrong'}">${isCorrect?'✅ 答對了！':'❌ 正確答案：'+q.opts[q.ans]}<br><small>📖 ${q.exp}</small></div>`:''}
+    </div>`;
+  });
+  html+=`</div>`;
+  document.getElementById('quizPanel').innerHTML=html;
+}
+
+function checkQuiz(i){
+  const q=QUIZZES[i];
+  const sel=document.querySelector(`input[name="q${i}"]:checked`);
+  if(!sel){alert('請先選擇答案');return;}
+  quizScores[i]=parseInt(sel.value)===q.ans;
+  persistUser();renderQuiz();
+}
+
+function logout(){
+  persistUser();lsClearSession();
+  userData={account:'',name:'',currentDay:1,completed:new Set()};
+  quizScores={};taskProgress={};diaryEntries={};selectedDay=null;
+  document.getElementById('appScreen').classList.remove('show');
+  document.getElementById('appScreen').style.display='none';
+  const ws=document.getElementById('welcomeScreen');
+  ws.style.display='flex';ws.classList.remove('hide');
+  document.getElementById('wAccount').value='';
+  document.getElementById('wName').value='';
+  document.getElementById('wGreeting').classList.remove('show');
+  document.querySelectorAll('.day-btn').forEach(b=>b.classList.remove('sel','done-d'));
+  document.getElementById('enterBtn').disabled=true;
+}
+</script>
+</body>
+</html>
