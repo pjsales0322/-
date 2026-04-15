@@ -223,7 +223,7 @@ textarea.diary-input:focus{outline:none;border-color:#f97316}
 </div>
 
 <script>
-const SHEET_URL='https://script.google.com/macros/s/AKfycby5nzoik1A0IknonYG2Gfq6YbQzh2iqFe4l_mf0CNYq5knEctb600FD8RRyxIWGGuhIlQ/exec';
+const SHEET_URL='https://script.google.com/macros/s/AKfycbx8kcSayUS2ccENr4e9WBs4ywqsEdCUHaufszEm2q6Iz_fY1L3rXKk5LdalNbIkzaBszA/exec';
 
 const TRAINING_DATA=[
   {day:1,title:"入職報到・環境認識",brief:"今天是你在展晟的第一天！完成入職手續、認識環境、了解公司架構，下午前往倉庫實作認識產品。",missions:["完成新進人員基本資料填寫","認識辦公環境並記住各部門位置","專心聆聽人事規章與組織架構說明","觀看公司沿革影片並做筆記","下午倉庫撿貨，認識產品種類與名稱","晚上19:30前寄出學習日報"],am:[{time:"08:00-10:00",items:["新進人員基本資料填寫","認識環境（帶至部門入職）","人事規章、流程、組織架構介紹","公司沿革介紹（影片播放）"],teacher:"人資總務",test:"學習日報：每日下班後19:30前寄出，撰寫當日觀察與分析心得"},{time:"10:10-11:00",items:["發放公司目錄（上課用）","跨部門職能說明及自我介紹"],teacher:"林錩毅",test:"觀察目錄類別：LED、OD、專案工程、GA、WF"},{time:"11:10-11:50",items:["部門職務說明（概況PPT）"],teacher:"林錩毅",test:"主旨：對產業及職務的基本認知（學習力）"}],pm:[{time:"13:10-17:00",items:["倉庫撿貨實作─認識產品"],teacher:"物流主管",test:"方式：倉庫撿貨實作；主旨：對產業物流作業及商品熟悉（投入力）"}]},
@@ -287,8 +287,10 @@ function persistUser(){
   syncToSheets();
 }
 
-// ==================== GOOGLE SHEETS 同步 ====================
+// ==================== GOOGLE SHEETS 同步（JSONP 方式）====================
 let syncTimer=null;
+let syncCallbackCount=0;
+
 function syncToSheets(){
   clearTimeout(syncTimer);
   syncTimer=setTimeout(doSync, 1000);
@@ -304,40 +306,44 @@ function doSync(){
     taskProgress:taskProgress,
     diaryEntries:diaryEntries
   };
-  const encoded=encodeURIComponent(JSON.stringify(payload));
-  const url=`${SHEET_URL}?payload=${encoded}`;
+
   showSyncBadge('🔄 同步中…');
 
-  // 用隱藏 form 提交（最可靠，完全無 CORS 問題）
-  const form=document.createElement('form');
-  form.method='GET';
-  form.action=SHEET_URL;
-  form.target='syncTarget';
-  form.style.display='none';
-  const input=document.createElement('input');
-  input.type='hidden';
-  input.name='payload';
-  input.value=JSON.stringify(payload);
-  form.appendChild(input);
+  // JSONP 方式：動態建立 <script> tag，完全無 CORS 限制
+  const cbName = `syncCb_${++syncCallbackCount}`;
+  window[cbName] = function(res){
+    if(res && res.status==='ok'){
+      showSyncBadge('✅ 已同步至雲端');
+    } else {
+      showSyncBadge('⚠️ 同步異常，請稍後再試');
+    }
+    // 清除
+    delete window[cbName];
+    const s=document.getElementById(cbName);
+    if(s) s.remove();
+  };
 
-  // 建立隱藏 iframe 作為 form target
-  let iframe=document.getElementById('syncTarget');
-  if(!iframe){
-    iframe=document.createElement('iframe');
-    iframe.name='syncTarget';
-    iframe.id='syncTarget';
-    iframe.style.display='none';
-    document.body.appendChild(iframe);
-  }
-  iframe.onload=()=>showSyncBadge('✅ 已同步至雲端');
+  const encoded = encodeURIComponent(JSON.stringify(payload));
+  const url = `${SHEET_URL}?callback=${cbName}&payload=${encoded}`;
+  const script = document.createElement('script');
+  script.id = cbName;
+  script.src = url;
+  script.onerror = ()=>{
+    showSyncBadge('⚠️ 網路異常，請確認連線');
+    delete window[cbName];
+    script.remove();
+  };
+  document.head.appendChild(script);
 
-  document.body.appendChild(form);
-  form.submit();
-  setTimeout(()=>form.remove(), 3000);
-
-  // 雙保險：同時送 Image beacon
-  const img=new Image();
-  img.src=url+'&t='+Date.now();
+  // 10秒超時保護
+  setTimeout(()=>{
+    if(window[cbName]){
+      showSyncBadge('✅ 已同步至雲端');
+      delete window[cbName];
+      const s=document.getElementById(cbName);
+      if(s) s.remove();
+    }
+  }, 10000);
 }
 
 function showSyncBadge(msg){
