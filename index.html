@@ -306,21 +306,37 @@ function doSync(){
   };
   const encoded=encodeURIComponent(JSON.stringify(payload));
   const url=`${SHEET_URL}?payload=${encoded}`;
+  showSyncBadge('🔄 同步中…');
 
-  // 方法一：iframe 靜默送出（最可靠，完全無 CORS 問題）
-  let iframe=document.getElementById('syncFrame');
+  // 用隱藏 form 提交（最可靠，完全無 CORS 問題）
+  const form=document.createElement('form');
+  form.method='GET';
+  form.action=SHEET_URL;
+  form.target='syncTarget';
+  form.style.display='none';
+  const input=document.createElement('input');
+  input.type='hidden';
+  input.name='payload';
+  input.value=JSON.stringify(payload);
+  form.appendChild(input);
+
+  // 建立隱藏 iframe 作為 form target
+  let iframe=document.getElementById('syncTarget');
   if(!iframe){
     iframe=document.createElement('iframe');
-    iframe.id='syncFrame';
+    iframe.name='syncTarget';
+    iframe.id='syncTarget';
     iframe.style.display='none';
     document.body.appendChild(iframe);
   }
-  iframe.src=url;
-  showSyncBadge('🔄 同步中…');
+  iframe.onload=()=>showSyncBadge('✅ 已同步至雲端');
 
-  // 方法二：同時用 Image beacon 雙保險
+  document.body.appendChild(form);
+  form.submit();
+  setTimeout(()=>form.remove(), 3000);
+
+  // 雙保險：同時送 Image beacon
   const img=new Image();
-  img.onload=img.onerror=()=>showSyncBadge('✅ 已同步至雲端');
   img.src=url+'&t='+Date.now();
 }
 
